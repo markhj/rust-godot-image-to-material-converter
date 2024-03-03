@@ -5,45 +5,20 @@ use image::{DynamicImage, ImageResult};
 use image::io::Reader as ImageReader;
 use regex;
 use regex::Regex;
+use clap::Parser;
 
-/// The ``Options`` struct is used to pass parsed information provided via
-/// arguments, options and configuration
+#[derive(Parser, Debug)]
+#[command(name = "Godot Image to Material Converter")]
+#[command(version = "0.2.0")]
 struct Options {
     search_pattern: String,
+
+    #[arg(short, long, default_value_t = false)]
     allow_overwrites: bool
 }
 
 fn main() {
-    // Generate the options struct based on the vector of arguments
-    // If generation goes well, we continue to processing of files
-    match generate_options(env::args().skip(1).collect()) {
-        Ok(options) => process(options),
-        Err(err) => eprintln!("{}", err)
-    }
-}
-
-fn generate_options(args: Vec<String>) -> Result<Options, String> {
-    // A search pattern must be provided
-    if args.is_empty() {
-        return Err(String::from("You must provide a search pattern, for example: *.tif"));
-    }
-
-    // Default values
-    let mut allow_overwrites: bool = false;
-
-    // Loop over arguments
-    // @todo Use library for better parsing of options
-    for arg in &args {
-        match arg.as_str() {
-            "--allow-overwrites" => allow_overwrites = true,
-            _ => {}
-        }
-    }
-
-    Ok(Options {
-        search_pattern: args.get(0).unwrap().clone(),
-        allow_overwrites
-    })
+    process(Options::parse());
 }
 
 /// Generate the ``Regex`` instance based on the provided ``search_pattern``
