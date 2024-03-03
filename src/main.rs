@@ -1,6 +1,6 @@
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use image::{DynamicImage, ImageResult};
 use image::io::Reader as ImageReader;
 use regex;
@@ -9,12 +9,18 @@ use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[command(name = "Godot Image to Material Converter")]
-#[command(version = "0.2.0")]
+#[command(version = "0.1.2")]
 struct Options {
+    /// Regular expression applied on every file found
     search_pattern: String,
 
+    /// Overwrite output files which already exists
     #[arg(short, long, default_value_t = false)]
-    allow_overwrites: bool
+    allow_overwrites: bool,
+
+    /// The subdirectory where the output files should be located
+    #[arg(short, long)]
+    destination: Option<String>
 }
 
 fn main() {
@@ -40,6 +46,8 @@ fn generate_filename_regex(pattern: String) -> Regex {
 fn process(options: Options) {
     let files = get_files(options.search_pattern);
 
+    create_destination_directory(&options.destination).expect("Failed to create destination");
+
     // If file list is empty, we notify the user
     if files.is_empty() {
         eprintln!("{} {}",
@@ -49,17 +57,41 @@ fn process(options: Options) {
 
     // Iterate over each file and attempt to convert them
     for path in files {
-        match convert_file(&path, options.allow_overwrites) {
+        match convert_file(&path, options.allow_overwrites, &options.destination) {
             Ok(_) => println!("OK: {}", path.file_name().unwrap().to_str().unwrap()),
             Err(t) => eprintln!("{}", t),
         }
     }
 }
 
+/// If the user has requested a destination directory, we will first
+/// check if that directory exists -- and if not, we will create it
+fn create_destination_directory(dest: &Option<String>) -> Result<(), String> {
+    // If not destination is requested, return OK
+    if dest.is_none() {
+        return Ok(());
+    }
+
+    let dir: String = dest.clone().unwrap();
+    let dir_path: &Path = Path::new(&dir);
+
+    // If the directory already exists, return OK
+    if dir_path.is_dir() {
+        return Ok(());
+    }
+
+    // Abort, if we failed to create the directory
+    if let Err(err) = fs::create_dir(dir_path) {
+        return Err(format!("Error creating directory: {}", err));
+    }
+
+    Ok(())
+}
+
 /// Convert file
 /// The image is loaded into a ``DynamicImage`` instance, which can then be used
 /// to save the image as a new format
-fn convert_file(path: &PathBuf, allow_overwrites: bool) -> Result<(), String> {
+fn convert_file(path: &PathBuf, allow_overwrites: bool, destination: &Option<String>) -> Result<(), String> {
     // Attempt to read the file
     let img: ImageResult<DynamicImage> = ImageReader::open(path.clone()).unwrap().decode();
 
@@ -69,7 +101,7 @@ fn convert_file(path: &PathBuf, allow_overwrites: bool) -> Result<(), String> {
     }
 
     // Generate the new filepath
-    let new_path: PathBuf = generate_new_filename(&path);
+    let mut new_path: PathBuf = generate_new_filename(&path, &destination);
 
     // If the path exists, and overwrites are not allowed, we abort
     if new_path.exists() && !allow_overwrites {
@@ -121,6 +153,16 @@ fn get_files(pattern: String) -> Vec<PathBuf> {
 
 /// Generates the output filename, based on options/configuration and
 /// the input filename.
-fn generate_new_filename(current: &PathBuf) -> PathBuf {
-    return current.with_extension("png");
+fn generate_new_filename(current: &PathBuf, destination: &Option<String>) -> PathBuf {
+    let mut path = current.clone();
+
+    // If destination is requested, we insert the directory name between the filename
+    // and spot before the filename in the original path
+    if destination.is_some() {
+        path.pop();
+        path.push(destination.clone().unwrap());
+        path.push(current.file_name().unwrap());
+    }
+
+    return path.with_extension("png");
 }

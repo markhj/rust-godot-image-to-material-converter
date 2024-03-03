@@ -254,6 +254,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gim"
+version = "0.1.2"
+dependencies = [
+ "clap",
+ "image",
+ "regex",
+]
+
+[[package]]
 name = "half"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -285,15 +294,6 @@ dependencies = [
  "png",
  "qoi",
  "tiff",
-]
-
-[[package]]
-name = "image-converter"
-version = "0.1.0"
-dependencies = [
- "clap",
- "image",
- "regex",
 ]
 
 [[package]]

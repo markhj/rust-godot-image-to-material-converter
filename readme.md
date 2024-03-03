@@ -22,6 +22,7 @@ The code is written in **Rust v. 1.74**.
 ## Dependencies
 * ``Image 0.24.9``
 * ``Regex 1.10.3``
+* ``Clap 4.5.1``
 
 ## 🚧 Installation
 
@@ -56,8 +57,5 @@ Replace ``[program]`` with the name of the executable.
 * Installer which registers the environment variable
 * More output formats
 * Config file with instructions on how to convert the files
-* Improve argument/option parsing in CLI
 * Options
-  * Allow overwrites
-  * Put into folder
   * Change filename according to pattern
