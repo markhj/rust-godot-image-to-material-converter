@@ -22,7 +22,7 @@ fn main() {
     }
 }
 
-fn generate_options(mut args: Vec<String>) -> Result<Options, String> {
+fn generate_options(args: Vec<String>) -> Result<Options, String> {
     // A search pattern must be provided
     if args.is_empty() {
         return Err(String::from("You must provide a search pattern, for example: *.tif"));

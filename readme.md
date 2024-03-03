@@ -1,5 +1,7 @@
 ![Godot image to material converter banner](https://res.cloudinary.com/drfztvfdh/image/upload/v1709453938/Github/godot-image-to-material_mgrft2.jpg)
 
+![GitHub Tag](https://img.shields.io/github/v/tag/markhj/rust-godot-image-to-material-converter?label=version)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/41f3cda5f9354dab94854950903f154f)](https://app.codacy.com/gh/markhj/rust-godot-image-to-material-converter/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.74+-lightgray.svg)](https://github.com/markhj/rust-config-reader)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?label=license)
 
@@ -26,7 +28,7 @@ The code is written in **Rust v. 1.74**.
 Clone the repo:
 
 ````bash
-git clone https://github.com/markhj/XXXXXX
+git clone https://github.com/markhj/rust-godot-image-to-material-converter
 ````
 
 Build the code with your Rust tool/IDE.
