@@ -44,10 +44,33 @@ executable resides.
 
 Navigate to the directory, where your ``.tiff`` files are.
 
-Replace ``[program]`` with the name of the executable.
+````bash
+gi2mc *.tiff
+````
+
+### Allow overwrites
+
+If you want to overwrite existing files when converting, use the ``--allow-overwrites`` or ``-a`` flag:
 
 ````bash
-[program] *.tiff
+gi2mc *.tiff --a
+````
+
+### Destination directory
+
+To put the files into a subdirectory, use ``--destination`` or ``-d``:
+
+````bash
+gi2mc *.tiff -d"subfolder"
+````
+
+### Preview
+
+To see what the program intends to do, before actually carrying out any changes, you use
+the ``--preview`` or ``-p`` flag:
+
+````bash
+gi2mc *.tiff -p
 ````
 
 ## 🚚 Todo
