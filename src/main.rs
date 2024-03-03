@@ -20,7 +20,12 @@ struct Options {
 
     /// The subdirectory where the output files should be located
     #[arg(short, long)]
-    destination: Option<String>
+    destination: Option<String>,
+
+    /// Preview what will happen with the current configuration
+    /// No files will be converted when this flag is on
+    #[arg(short, long, default_value_t = false)]
+    preview: bool,
 }
 
 fn main() {
@@ -44,9 +49,9 @@ fn generate_filename_regex(pattern: String) -> Regex {
 /// Then, a number of checks are made, such as whether the file already exists.
 /// If all checks pass, the file will be converted.
 fn process(options: Options) {
-    let files = get_files(options.search_pattern);
+    let files = get_files(&options);
 
-    create_destination_directory(&options.destination).expect("Failed to create destination");
+    create_destination_directory(&options).expect("Failed to create destination");
 
     // If file list is empty, we notify the user
     if files.is_empty() {
@@ -57,8 +62,15 @@ fn process(options: Options) {
 
     // Iterate over each file and attempt to convert them
     for path in files {
-        match convert_file(&path, options.allow_overwrites, &options.destination) {
-            Ok(_) => println!("OK: {}", path.file_name().unwrap().to_str().unwrap()),
+        match convert_file(&path, &options) {
+            Ok(new_path) => {
+                let original = path.file_name().unwrap().to_str().unwrap();
+                if options.preview {
+                    println!("File {} would converted and moved to: {}", original, new_path.to_str().unwrap())
+                } else {
+                    println!("OK: {}", original)
+                }
+            },
             Err(t) => eprintln!("{}", t),
         }
     }
@@ -66,7 +78,9 @@ fn process(options: Options) {
 
 /// If the user has requested a destination directory, we will first
 /// check if that directory exists -- and if not, we will create it
-fn create_destination_directory(dest: &Option<String>) -> Result<(), String> {
+fn create_destination_directory(options: &Options) -> Result<(), String> {
+    let dest = &options.destination;
+
     // If not destination is requested, return OK
     if dest.is_none() {
         return Ok(());
@@ -77,6 +91,10 @@ fn create_destination_directory(dest: &Option<String>) -> Result<(), String> {
 
     // If the directory already exists, return OK
     if dir_path.is_dir() {
+        return Ok(());
+    }
+
+    if options.preview {
         return Ok(());
     }
 
@@ -91,7 +109,10 @@ fn create_destination_directory(dest: &Option<String>) -> Result<(), String> {
 /// Convert file
 /// The image is loaded into a ``DynamicImage`` instance, which can then be used
 /// to save the image as a new format
-fn convert_file(path: &PathBuf, allow_overwrites: bool, destination: &Option<String>) -> Result<(), String> {
+fn convert_file(path: &PathBuf, options: &Options) -> Result<PathBuf, String> {
+    let allow_overwrites = options.allow_overwrites;
+    let destination = &options.destination;
+
     // Attempt to read the file
     let img: ImageResult<DynamicImage> = ImageReader::open(path.clone()).unwrap().decode();
 
@@ -101,7 +122,7 @@ fn convert_file(path: &PathBuf, allow_overwrites: bool, destination: &Option<Str
     }
 
     // Generate the new filepath
-    let mut new_path: PathBuf = generate_new_filename(&path, &destination);
+    let new_path: PathBuf = generate_new_filename(&path, &destination);
 
     // If the path exists, and overwrites are not allowed, we abort
     if new_path.exists() && !allow_overwrites {
@@ -109,25 +130,31 @@ fn convert_file(path: &PathBuf, allow_overwrites: bool, destination: &Option<Str
                            new_path.file_name().unwrap().to_str().unwrap()));
     }
 
+    // If in preview mode, we will abort here to avoid carrying
+    // out actual actions. Instead, we just return OK
+    if options.preview {
+        return Ok(new_path.clone());
+    }
+
     // Attempt to save the file (the changed extension will automatically
     // make Image library encode in that format)
-    let res: ImageResult<()> = img.unwrap().save(new_path);
+    let res: ImageResult<()> = img.unwrap().save(new_path.clone());
 
     // If saving failed, we abort
     if res.is_err() {
         return Err(format!("Failed to convert: {}", path.file_name().unwrap().to_str().unwrap()));
     }
 
-    Ok(())
+    Ok(new_path.clone())
 }
 
 /// Retrieves the list of files according to ``search_pattern``.
 /// The regular expression for matching filenames is generated witht ``generate_filename_regex``.
 /// Then the files of the current working directory are loaded, and afterward
 /// filtered using the generated ``Regex``.
-fn get_files(pattern: String) -> Vec<PathBuf> {
+fn get_files(options: &Options) -> Vec<PathBuf> {
     // Generate the Regex instance based on the search pattern provided by the user
-    let regex = generate_filename_regex(pattern);
+    let regex = generate_filename_regex(options.search_pattern.clone());
 
     // Load current direction and list of files
     let current_dir = env::current_dir().expect("Failed to retrieve directory");
