@@ -270,7 +270,7 @@ version = "0.1.2"
 dependencies = [
  "clap",
  "image",
- "rand",
+ "material",
  "regex",
 ]
 
@@ -337,6 +337,14 @@ checksum = "3c168f8615b12bc01f9c17e2eb0cc07dcae1940121185446edc3744920e8ef45"
 dependencies = [
  "autocfg",
  "scopeguard",
+]
+
+[[package]]
+name = "material"
+version = "0.1.0"
+dependencies = [
+ "rand",
+ "regex",
 ]
 
 [[package]]

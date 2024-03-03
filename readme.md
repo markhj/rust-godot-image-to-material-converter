@@ -45,7 +45,7 @@ executable resides.
 Navigate to the directory, where your ``.tiff`` files are.
 
 ````bash
-gi2mc *.tiff
+gim *.tiff
 ````
 
 ### Allow overwrites
@@ -53,7 +53,7 @@ gi2mc *.tiff
 If you want to overwrite existing files when converting, use the ``--allow-overwrites`` or ``-a`` flag:
 
 ````bash
-gi2mc *.tiff --a
+gim *.tiff --a
 ````
 
 ### Destination directory
@@ -61,7 +61,7 @@ gi2mc *.tiff --a
 To put the files into a subdirectory, use ``--destination`` or ``-d``:
 
 ````bash
-gi2mc *.tiff -d"subfolder"
+gim *.tiff -d"subfolder"
 ````
 
 ### Preview
@@ -70,7 +70,15 @@ To see what the program intends to do, before actually carrying out any changes,
 the ``--preview`` or ``-p`` flag:
 
 ````bash
-gi2mc *.tiff -p
+gim *.tiff -p
+````
+
+### Generate material
+
+To generate a Godot ``StandardMaterial3D`` use:
+
+````bash
+gim *.tiff -m
 ````
 
 ## 🚚 Todo
