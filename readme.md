@@ -53,7 +53,7 @@ gim *.tiff
 If you want to overwrite existing files when converting, use the ``--allow-overwrites`` or ``-a`` flag:
 
 ````bash
-gim *.tiff --a
+gim *.tiff -a
 ````
 
 ### Destination directory
@@ -83,7 +83,6 @@ gim *.tiff -m
 
 ## 🚚 Todo
 
-* Generate Godot ``StandardMaterial3D`` material automatically
 * Pipeline which builds executables for various platforms
 * Installer which registers the environment variable
 * More output formats
