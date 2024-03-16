@@ -39,15 +39,14 @@ struct GodotMaterialMapping {
 /// * roughness
 /// * metallic
 /// * ao (Ambient Occlusion)
-pub fn generate(files: Vec<PathBuf>) {
+pub fn generate(files: Vec<PathBuf>) -> Result<String, String> {
     let files_found = scan_for_import_files(&files);
 
     // Abort, if the number of .import files doesn't match number of converted files
     // This means Godot hasn't seen all files yet, or has failed to import some
     // In this case, we don't want to just go ahead and create the material
     if files_found.len() < files.len() {
-        println!("Will not wait any longer for .import files");
-        return;
+        return Err(String::from("Will not wait any longer for .import files"));
     }
 
     // Create the list of materials discovered
@@ -57,26 +56,25 @@ pub fn generate(files: Vec<PathBuf>) {
     // Otherwise, similarly to above, we risk creating a material with missing
     // properties and attributes
     if uid_mapping.len() != files_found.len() {
-        eprintln!("UID mapping does not match number of files.");
-        return;
+        return Err(String::from("UID mapping does not match number of files."));
     }
 
     // Generate the data and save the material file
-    generate_material(&uid_mapping);
+    Ok(generate_material(&uid_mapping))
 }
 
 /// This method generates the data of the material (.tres) file, using a
 /// series private helper functions.
 ///
 /// Lastly, it saves the file - or dies trying.
-fn generate_material(mapping: &Vec<GodotMaterialMapping>) {
+fn generate_material(mapping: &Vec<GodotMaterialMapping>) -> String {
     let mut mat_data = String::new();
 
     generate_header(&mut mat_data);
     generate_ext_resources(&mut mat_data, mapping);
     generate_resources(&mut mat_data, mapping);
 
-    fs::write("material.tres", mat_data).expect("Failed to generate material");
+    mat_data
 }
 
 /// In order to generate the Godot material, we need to peek into the .import

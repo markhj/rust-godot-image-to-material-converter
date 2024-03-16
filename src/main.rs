@@ -103,7 +103,26 @@ fn process(options: Options) {
     }
 
     if options.material {
-        material::generate(converted_files);
+        generate_godot_material(options, converted_files);
+    }
+}
+
+/// Retrieve the compiled material data and store it in a file
+/// When in preview mode, instead show where the file would be located
+fn generate_godot_material(options: Options, converted_files: Vec<PathBuf>) {
+    let mat_data: Result<String, String> = material::generate(converted_files);
+    let mat_path = PathBuf::from("material.tres");
+
+    if mat_data.is_err() {
+        eprintln!("{}", mat_data.err().unwrap())
+    } else if !options.allow_overwrites && mat_path.exists() {
+        println!("Material file ({}) exists and will not be overwritten", mat_path.to_str().unwrap());
+    } else if options.preview {
+        println!("Material file would be generated at: {}", mat_path.to_str().unwrap());
+    } else {
+        fs::write(mat_path.clone(), mat_data.unwrap())
+            .expect("Failed to generate material");
+        println!("Generated material: {}", mat_path.to_str().unwrap());
     }
 }
 
