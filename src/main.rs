@@ -111,7 +111,8 @@ fn process(options: Options) {
 /// When in preview mode, instead show where the file would be located
 fn generate_godot_material(options: Options, converted_files: Vec<PathBuf>) {
     let mat_data: Result<String, String> = material::generate(converted_files);
-    let mat_path = PathBuf::from("material.tres");
+    let base_path = PathBuf::from("material.tres");
+    let mat_path = generate_path(&base_path, &options.destination);
 
     if mat_data.is_err() {
         eprintln!("{}", mat_data.err().unwrap())
@@ -230,6 +231,10 @@ fn get_files(options: &Options) -> Vec<PathBuf> {
 /// Generates the output filename, based on options/configuration and
 /// the input filename.
 fn generate_new_filename(current: &PathBuf, destination: &Option<String>) -> PathBuf {
+    return generate_path(current, destination).with_extension("png");
+}
+
+fn generate_path(current: &PathBuf, destination: &Option<String>) -> PathBuf {
     let mut path = current.clone();
 
     // If destination is requested, we insert the directory name between the filename
@@ -240,5 +245,5 @@ fn generate_new_filename(current: &PathBuf, destination: &Option<String>) -> Pat
         path.push(current.file_name().unwrap());
     }
 
-    return path.with_extension("png");
+    path
 }
