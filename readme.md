@@ -81,6 +81,16 @@ To generate a Godot ``StandardMaterial3D`` use:
 gim *.tiff -m
 ````
 
+### Delete source files
+
+You can delete the source files are successful conversion using:
+
+````bash
+gim *.tiff --delete-sources
+````
+
+You will be prompted to confirm the files which will be deleted.
+
 ## 🚚 Todo
 
 * Pipeline which builds executables for various platforms

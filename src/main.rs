@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, io};
 use std::fs;
 use std::path::{Path, PathBuf};
 use image::{DynamicImage, ImageResult};
@@ -21,6 +21,10 @@ struct Options {
     /// The subdirectory where the output files should be located
     #[arg(short, long)]
     destination: Option<String>,
+
+    /// Delete source files upon successful generation
+    #[arg(long, default_value_t = false)]
+    delete_sources: bool,
 
     /// Preview what will happen with the current configuration
     /// No files will be converted when this flag is on
@@ -78,6 +82,9 @@ fn process(options: Options) {
     // to the material generator
     let mut converted_files: Vec<PathBuf> = Vec::new();
 
+    // List of successfully converted files (used to delete sources)
+    let mut successful_conversions: Vec<PathBuf> = Vec::new();
+
     // Iterate over each file and attempt to convert them
     for path in files {
         // Store the original filename
@@ -91,6 +98,7 @@ fn process(options: Options) {
                     println!("OK: {}", original)
                 }
                 converted_files.push(new_path);
+                successful_conversions.push(path);
             },
             Err(ConversionError::FailedToDecode) => eprintln!("Failed to decode: {}", original),
             Err(ConversionError::FailedToConvert) => eprintln!("Failed to convert: {}", original),
@@ -103,17 +111,65 @@ fn process(options: Options) {
     }
 
     if options.material {
-        generate_godot_material(options, converted_files);
+        generate_godot_material(&options, converted_files);
+    }
+
+    if options.delete_sources {
+        delete_sources(&options, successful_conversions);
+    }
+}
+
+fn delete_sources(options: &Options, files: Vec<PathBuf>) {
+    if options.preview {
+        delete_sources_preview(&files);
+        return;
+    }
+
+    println!("\nDelete these files? [Y/n]");
+    for file in &files {
+        println!("- {}", file.to_str().unwrap());
+    }
+
+    // Await the user response
+    let mut input = String::new();
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read line");
+
+    // Inputs often arrive with white spacing (by the ENTER button)
+    input = input.trim().to_owned();
+
+    // The answer must be an exact uppercase "Y"
+    if input == "Y" {
+        delete_source_files(&files);
+    } else {
+        println!("Files won't be deleted");
+    }
+}
+
+fn delete_source_files(files: &Vec<PathBuf>) {
+    for file in files {
+        let filename = file.file_name().unwrap().to_str().unwrap();
+        println!("[DELETED] {}", filename);
+        fs::remove_file(file).expect(format!("Failed to delete {}", filename).as_str())
+    }
+}
+
+fn delete_sources_preview(files: &Vec<PathBuf>) {
+    println!("\nFollowing files would be deleted:");
+    for file in files {
+        println!("- {}", file.to_str().unwrap());
     }
 }
 
 /// Retrieve the compiled material data and store it in a file
 /// When in preview mode, instead show where the file would be located
-fn generate_godot_material(options: Options, converted_files: Vec<PathBuf>) {
+fn generate_godot_material(options: &Options, converted_files: Vec<PathBuf>) {
     let mat_data: Result<String, String> = material::generate(converted_files);
     let base_path = PathBuf::from("material.tres");
     let mat_path = generate_path(&base_path, &options.destination);
 
+    println!();
     if mat_data.is_err() {
         eprintln!("{}", mat_data.err().unwrap())
     } else if !options.allow_overwrites && mat_path.exists() {
