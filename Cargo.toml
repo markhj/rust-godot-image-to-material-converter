@@ -1,6 +1,6 @@
 [package]
 name = "gim"
-version = "0.1.2"
+version = "0.1.5"
 edition = "2021"
 
 [workspace]
@@ -13,3 +13,4 @@ image = "0.24.9"
 regex = "1.10.3"
 clap = { version = "4.5.1", features = ["derive"] }
 material = { path = "material" }
+colored = "2.1.0"

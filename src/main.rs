@@ -6,10 +6,11 @@ use image::io::Reader as ImageReader;
 use regex;
 use regex::Regex;
 use clap::Parser;
+use colored::Colorize;
 
 #[derive(Parser, Debug)]
 #[command(name = "Godot Image to Material Converter")]
-#[command(version = "0.1.2")]
+#[command(version = "0.1.5")]
 struct Options {
     /// Regular expression applied on every file found
     search_pattern: String,
@@ -93,9 +94,14 @@ fn process(options: Options) {
         match convert_file(&path, &options) {
             Ok(new_path) => {
                 if options.preview {
-                    println!("File {} would converted and moved to: {}", original, new_path.to_str().unwrap())
+                    println!("[{} {}] {} => {}",
+                             "PREVIEW".blue(),
+                             "CONVERTED".green(),
+                             original,
+                             new_path.file_name().unwrap().to_str().unwrap()
+                    );
                 } else {
-                    println!("OK: {}", original)
+                    println!("[{}] {}", "CONVERTED".green(), original)
                 }
                 converted_files.push(new_path);
                 successful_conversions.push(path);
@@ -104,8 +110,9 @@ fn process(options: Options) {
             Err(ConversionError::FailedToConvert) => eprintln!("Failed to convert: {}", original),
             Err(ConversionError::FileExists) => {
                 let new_path = generate_new_filename(&path, &options.destination);
-                println!("Exists: {}", new_path.file_name().unwrap().to_str().unwrap());
+                println!("[{}] {}", "EXISTS".yellow(), new_path.file_name().unwrap().to_str().unwrap());
                 converted_files.push(new_path);
+                successful_conversions.push(path);
             },
         }
     }
@@ -125,10 +132,13 @@ fn delete_sources(options: &Options, files: Vec<PathBuf>) {
         return;
     }
 
-    println!("\nDelete these files? [Y/n]");
+    println!("====");
+    let mut count: i8 = 0;
     for file in &files {
-        println!("- {}", file.to_str().unwrap());
+        count += 1;
+        println!("[FILE {}/{}] {}", count, files.len(), file.to_str().unwrap());
     }
+    println!("Delete these files? [Y/n]");
 
     // Await the user response
     let mut input = String::new();
@@ -143,22 +153,21 @@ fn delete_sources(options: &Options, files: Vec<PathBuf>) {
     if input == "Y" {
         delete_source_files(&files);
     } else {
-        println!("Files won't be deleted");
+        println!("[{}] Source files won't be deleted", "INFO".blue());
     }
 }
 
 fn delete_source_files(files: &Vec<PathBuf>) {
     for file in files {
         let filename = file.file_name().unwrap().to_str().unwrap();
-        println!("[DELETED] {}", filename);
+        println!("[{}] {}", "DELETED".purple(), filename);
         fs::remove_file(file).expect(format!("Failed to delete {}", filename).as_str())
     }
 }
 
 fn delete_sources_preview(files: &Vec<PathBuf>) {
-    println!("\nFollowing files would be deleted:");
     for file in files {
-        println!("- {}", file.to_str().unwrap());
+        println!("[{} {}] {}", "PREVIEW".blue(), "DELETED".purple(), file.to_str().unwrap());
     }
 }
 
@@ -169,17 +178,20 @@ fn generate_godot_material(options: &Options, converted_files: Vec<PathBuf>) {
     let base_path = PathBuf::from("material.tres");
     let mat_path = generate_path(&base_path, &options.destination);
 
-    println!();
     if mat_data.is_err() {
         eprintln!("{}", mat_data.err().unwrap())
     } else if !options.allow_overwrites && mat_path.exists() {
-        println!("Material file ({}) exists and will not be overwritten", mat_path.to_str().unwrap());
+        println!("[{}] Material file (overwrite not allowed)",
+                 "EXISTS".yellow());
     } else if options.preview {
-        println!("Material file would be generated at: {}", mat_path.to_str().unwrap());
+        println!("[{} {}] Generated material: {}",
+                 "PREVIEW".blue(),
+                 "OK".green(),
+                 mat_path.to_str().unwrap());
     } else {
         fs::write(mat_path.clone(), mat_data.unwrap())
             .expect("Failed to generate material");
-        println!("Generated material: {}", mat_path.to_str().unwrap());
+        println!("[{}] Generated material: {}", "OK".green(), mat_path.to_str().unwrap());
     }
 }
 
